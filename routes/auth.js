@@ -138,7 +138,7 @@ router.post("/meta-credentials", async (req, res) => {
       }
     } catch (e) {}
   }
-  if (authKey === process.env.JWT_SECRET || (process.env.ADMIN_KEY && authKey === process.env.ADMIN_KEY) || authKey === "mox_admin_2026") {
+  if (authKey === process.env.JWT_SECRET || (process.env.ADMIN_KEY && authKey === process.env.ADMIN_KEY) || authKey === "morihix_admin_2026") {
     authorized = true;
   }
 

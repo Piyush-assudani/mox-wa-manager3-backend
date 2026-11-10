@@ -1,6 +1,6 @@
-# Mox WA Manager 3 Backend
+# Morihix WA Manager 3 Backend
 
-This is the high-performance backend service for Mox WA Manager 3. It provides RESTful APIs, real-time Socket.IO events, and webhook handling for managing WhatsApp campaigns, contacts, media, and real-time messaging using the official WhatsApp Cloud API.
+This is the high-performance backend service for Morihix WA Manager 3. It provides RESTful APIs, real-time Socket.IO events, and webhook handling for managing WhatsApp campaigns, contacts, media, and real-time messaging using the official WhatsApp Cloud API.
 
 ## Features
 
@@ -22,7 +22,7 @@ This is the high-performance backend service for Mox WA Manager 3. It provides R
    ```env
    PORT=5050
    NODE_ENV=development
-   BASE_URL=http://localhost:5050
+   BASE_URL=https://mox-wa3.piyushassudani.in
    FRONTEND_URL=http://localhost:3000
 
    # Meta WhatsApp API
@@ -33,7 +33,7 @@ This is the high-performance backend service for Mox WA Manager 3. It provides R
 
    # Storage & Database
    USE_LOCAL_STORAGE=true
-   DB_PATH=data/mox_data.db
+   DB_PATH=data/morihix_data.db
    ```
 
 3. **Start the server:**

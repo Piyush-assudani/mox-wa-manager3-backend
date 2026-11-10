@@ -1,4 +1,4 @@
--- Mox WA Manager 3 Database Schema
+-- Morihix WA Manager 3 Database Schema
 -- Run with: npm run migrate
 
 -- Enable UUID extension

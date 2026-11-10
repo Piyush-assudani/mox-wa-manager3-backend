@@ -305,7 +305,7 @@ router.get("/status", async (req, res) => {
     const totalLogs = await db.query("SELECT COUNT(*) as count FROM webhook_logs");
     const lastLogs = await db.query("SELECT * FROM webhook_logs ORDER BY created_at DESC LIMIT 15");
     const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "";
-    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
+    const baseUrl = (process.env.BASE_URL || "https://mox-wa3.piyushassudani.in").replace(/\/+$/, "");
 
     res.json({
       configured: !!verifyToken,
