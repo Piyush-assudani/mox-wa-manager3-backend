@@ -163,7 +163,7 @@ app.use("/uploads", express.static(uploadsPath));
 // API Root Status
 app.get("/", (req, res) => {
   res.json({
-    message: "Morihix WA Manager Backend API",
+    message: "Mox WA Manager 3 Backend API",
     status: "running",
     timestamp: new Date().toISOString(),
     endpoints: {
@@ -203,7 +203,7 @@ initBullMQ(io);
 
 // Server Listen
 server.listen(PORT, () => {
-  console.log(`🚀 Morihix WA Manager Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 Mox WA Manager 3 Backend running on http://localhost:${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🔌 WebSocket server ready`);
   console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);

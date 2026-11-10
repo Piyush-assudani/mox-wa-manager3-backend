@@ -8,7 +8,14 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const DB_PATH = path.join(DATA_DIR, "morihix_data.db");
+const DB_PATH = process.env.DB_PATH
+  ? (path.isAbsolute(process.env.DB_PATH) ? process.env.DB_PATH : path.resolve(__dirname, "..", process.env.DB_PATH))
+  : path.join(DATA_DIR, "mox_data.db");
+
+const DB_DIR = path.dirname(DB_PATH);
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
 const sqlite3 = require("sqlite3").verbose();
 
 const db = new sqlite3.Database(DB_PATH, (err) => {

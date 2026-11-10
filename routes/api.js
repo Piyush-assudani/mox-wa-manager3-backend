@@ -10,7 +10,7 @@ const HEALTH_CACHE_TTL = 30 * 1000;
 router.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    app: "Morihix WA Manager",
+    app: "Mox WA Manager 3",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });

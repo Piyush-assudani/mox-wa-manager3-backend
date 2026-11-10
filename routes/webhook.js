@@ -304,11 +304,12 @@ router.get("/status", async (req, res) => {
   try {
     const totalLogs = await db.query("SELECT COUNT(*) as count FROM webhook_logs");
     const lastLogs = await db.query("SELECT * FROM webhook_logs ORDER BY created_at DESC LIMIT 15");
-    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "vijaysetu_webhook_verify_token";
+    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "";
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
 
     res.json({
-      configured: true,
-      callback_url: "https://morihix-wa-manager.piyushassudani.in/webhook",
+      configured: !!verifyToken,
+      callback_url: `${baseUrl}/webhook`,
       verify_token: verifyToken,
       total_events_received: parseInt(totalLogs.rows[0]?.count || 0, 10),
       recent_events: lastLogs.rows.map(row => {

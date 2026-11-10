@@ -1,7 +1,7 @@
 {
-  "name": "morihix-wa-manager-backend",
+  "name": "mox-wa-manager3-backend",
   "version": "1.0.0",
-  "description": "Morihix WA Manager Backend API",
+  "description": "Mox WA Manager 3 Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
