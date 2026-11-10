@@ -20,7 +20,7 @@ This is the high-performance backend service for Morihix WA Manager 3. It provid
 
 2. **Environment Variables:** Configure `.env` with your credentials:
    ```env
-   PORT=5050
+   PORT=6000
    NODE_ENV=development
    BASE_URL=https://mox-wa3.piyushassudani.in
    FRONTEND_URL=http://localhost:3000
