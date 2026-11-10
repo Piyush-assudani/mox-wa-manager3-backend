@@ -21,7 +21,7 @@ router.get("/", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  const expectedToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN;
+  const expectedToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "morihix_wa3_webhook_verify_token_2026";
   if (mode === "subscribe" && token === expectedToken) {
     console.log("✅ Webhook verified successfully");
     return res.status(200).send(challenge);
@@ -304,7 +304,7 @@ router.get("/status", async (req, res) => {
   try {
     const totalLogs = await db.query("SELECT COUNT(*) as count FROM webhook_logs");
     const lastLogs = await db.query("SELECT * FROM webhook_logs ORDER BY created_at DESC LIMIT 15");
-    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "";
+    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || "morihix_wa3_webhook_verify_token_2026";
     const baseUrl = (process.env.BASE_URL || "https://mox-wa3.piyushassudani.in").replace(/\/+$/, "");
 
     res.json({
