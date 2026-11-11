@@ -381,6 +381,16 @@ router.post("/:contactId/media", upload.single("file"), async (req, res) => {
       return res.status(403).json({ error: "24-hour window closed.", window_closed: true });
     }
 
+    // Check file size limits for WhatsApp Cloud API
+    if (req.file.mimetype.startsWith("video/") && req.file.size > 16 * 1024 * 1024) {
+      fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: `Video exceeds 16MB limit (${(req.file.size / (1024 * 1024)).toFixed(1)}MB). WhatsApp Cloud API supports videos up to 16MB only.` });
+    }
+    if (req.file.mimetype.startsWith("image/") && req.file.size > 5 * 1024 * 1024) {
+      fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: `Image exceeds 5MB limit (${(req.file.size / (1024 * 1024)).toFixed(1)}MB). WhatsApp Cloud API supports images up to 5MB only.` });
+    }
+
     // Determine type
     let resourceType = "auto";
     let metaType = "image";

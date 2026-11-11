@@ -17,7 +17,7 @@ function getBaseUrl() {
   if (envUrl && envUrl.trim() !== "") {
     return envUrl.trim().replace(/\/+$/, "");
   }
-  const port = process.env.PORT || 5001;
+  const port = process.env.PORT || 6000;
   return `http://localhost:${port}`;
 }
 
@@ -48,7 +48,14 @@ async function uploadFileToServer(tempFilePath, folder = "library", resourceType
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  const ext = path.extname(tempFilePath) || ".bin";
+  let ext = path.extname(tempFilePath);
+  if (!ext || ext === ".tmp" || ext === ".bin") {
+    if (resourceType === "video") ext = ".mp4";
+    else if (resourceType === "image") ext = ".jpg";
+    else if (resourceType === "audio") ext = ".ogg";
+    else if (resourceType === "document") ext = ".pdf";
+    else ext = ".bin";
+  }
   const uniqueId = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
   const filename = `${uniqueId}${ext}`;
   const destination = path.join(targetDir, filename);

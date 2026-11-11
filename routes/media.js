@@ -15,11 +15,27 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: os.tmpdir(),
     filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || "";
       cb(null, `${Date.now()}-${file.originalname}`);
     },
   }),
-  limits: { fileSize: 32 * 1024 * 1024 }, // 32MB limit for server storage
+  limits: { fileSize: 32 * 1024 * 1024 }, // 32MB max ceiling for uploads
 });
+
+// Middleware to catch multer limit errors gracefully
+const handleUpload = (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({
+          error: "File size exceeds the 32MB maximum server limit.",
+        });
+      }
+      return res.status(400).json({ error: err.message || "Failed to process uploaded file." });
+    }
+    next();
+  });
+};
 
 // GET /api/media - list all media assets
 router.get("/", async (req, res) => {
@@ -38,17 +54,41 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/media - upload media directly to server storage
-router.post("/", upload.single("file"), async (req, res) => {
+// POST /api/media - upload media (images, videos, documents) directly to server storage
+router.post("/", handleUpload, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file provided" });
     }
 
+    const mime = (req.file.mimetype || "").toLowerCase();
+    const size = req.file.size;
+
+    // Detect resource type
     let resourceType = "auto";
-    if (req.file.mimetype.startsWith("image/")) resourceType = "image";
-    if (req.file.mimetype.startsWith("video/")) resourceType = "video";
-    if (req.file.mimetype.startsWith("audio/")) resourceType = "audio";
+    if (mime.startsWith("image/")) resourceType = "image";
+    else if (mime.startsWith("video/")) resourceType = "video";
+    else if (mime.startsWith("audio/")) resourceType = "audio";
+    else resourceType = "document";
+
+    // Enforce WhatsApp Cloud API media constraints
+    if (resourceType === "video") {
+      const MAX_VIDEO_BYTES = 16 * 1024 * 1024; // 16MB Meta limit
+      if (size > MAX_VIDEO_BYTES) {
+        fs.promises.unlink(req.file.path).catch(() => {});
+        return res.status(400).json({
+          error: `Video size (${(size / (1024 * 1024)).toFixed(1)}MB) exceeds 16MB. WhatsApp Cloud API supports video files up to 16MB only.`,
+        });
+      }
+    } else if (resourceType === "image") {
+      const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB Meta limit
+      if (size > MAX_IMAGE_BYTES) {
+        fs.promises.unlink(req.file.path).catch(() => {});
+        return res.status(400).json({
+          error: `Image size (${(size / (1024 * 1024)).toFixed(1)}MB) exceeds 5MB. WhatsApp Cloud API supports images up to 5MB only.`,
+        });
+      }
+    }
 
     // 1. Upload to Meta Cloud API (stream directly from temp file)
     let metaMediaId = null;
@@ -58,7 +98,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       console.warn("⚠️ Meta upload skipped/failed, saved to server storage:", metaErr.message);
     }
 
-    // 2. Store file directly on local server filesystem
+    // 2. Store file directly on local server filesystem (uploads/library)
     const mediaUrl = await uploadFileToServer(req.file.path, "library", resourceType);
 
     // 3. Clean up temp multer file
@@ -71,8 +111,15 @@ router.post("/", upload.single("file"), async (req, res) => {
       [req.file.originalname, mediaUrl, metaMediaId, resourceType]
     );
 
-    res.status(201).json(result.rows[0]);
+    const saved = result.rows[0];
+    res.status(201).json({
+      ...saved,
+      media_url: formatMediaUrl(saved.media_url),
+    });
   } catch (err) {
+    if (req.file?.path) {
+      fs.promises.unlink(req.file.path).catch(() => {});
+    }
     console.error("❌ Media upload error:", err);
     res.status(500).json({ error: err.message });
   }
