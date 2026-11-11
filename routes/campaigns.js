@@ -6,6 +6,7 @@ const { processCampaign } = require("../services/campaignProcessor");
 const { uploadFileToCloudinary } = require("../services/cloudinaryService");
 const os = require("os");
 const path = require("path");
+const fs = require("fs");
 const { uploadMediaToMeta, getTemplates, sendTemplateMessage } = require("../services/metaApi");
 const { formatMediaUrl } = require("../services/localStorageService");
 const { cleanPhoneNumber } = require("../utils/phone");
@@ -118,7 +119,28 @@ router.post("/", uploadMedia.single("mediaFile"), async (req, res) => {
         media_type = "document";
       }
 
+      if (media_type === "video" && req.file.size > 16 * 1024 * 1024) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+        return res.status(400).json({
+          error: "Video file exceeds Meta WhatsApp 16 MB limit. Please compress or choose a smaller video.",
+        });
+      }
+
+      if (media_type === "image" && req.file.size > 5 * 1024 * 1024) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+        return res.status(400).json({
+          error: "Image file exceeds Meta WhatsApp 5 MB limit. Please compress or choose a smaller image.",
+        });
+      }
+
       if (templateRequiresMediaHeader && requiredHeaderFormat && media_type !== requiredHeaderFormat) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
         return res.status(400).json({
           error: `Template "${template_name.trim()}" requires a ${requiredHeaderFormat} header, but a ${media_type} file was uploaded.`,
         });
@@ -127,9 +149,15 @@ router.post("/", uploadMedia.single("mediaFile"), async (req, res) => {
       try {
         media_id = await uploadMediaToMeta(req.file.path, req.file.mimetype);
       } catch (uploadErr) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
         return res.status(502).json({ error: uploadErr.message });
       }
       if (!media_id) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
         return res.status(500).json({ error: "Failed to upload media to WhatsApp Meta API." });
       }
 
@@ -140,6 +168,10 @@ router.post("/", uploadMedia.single("mediaFile"), async (req, res) => {
         media_url = await uploadFileToCloudinary(req.file.path, "wp_automation/campaigns", resourceType);
       } catch (uploadErr) {
         console.warn("Media storage upload skipped, proceeding with Meta ID:", uploadErr.message);
+      } finally {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
       }
     } else if (incomingMediaUrl) {
       media_type = (req.body.media_type || (requiredHeaderFormat ? requiredHeaderFormat.toLowerCase() : "image"));
