@@ -49,6 +49,7 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization, Range"
   );
+  res.setHeader("Access-Control-Expose-Headers", "Content-Range, Accept-Ranges, Content-Length");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
   // Security Headers

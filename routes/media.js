@@ -62,15 +62,24 @@ router.post("/", handleUpload, async (req, res) => {
       return res.status(400).json({ error: "No file provided" });
     }
 
-    const mime = (req.file.mimetype || "").toLowerCase();
+    const originalExt = path.extname(req.file.originalname || "").toLowerCase();
+    let mime = (req.file.mimetype || "").toLowerCase();
     const size = req.file.size;
 
-    // Detect resource type
+    // Detect resource type with extension fallback for videos, images, and audio
     let resourceType = "auto";
-    if (mime.startsWith("image/")) resourceType = "image";
-    else if (mime.startsWith("video/")) resourceType = "video";
-    else if (mime.startsWith("audio/")) resourceType = "audio";
-    else resourceType = "document";
+    if (mime.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/i.test(originalExt)) {
+      resourceType = "image";
+      if (!mime.startsWith("image/")) mime = "image/jpeg";
+    } else if (mime.startsWith("video/") || /\.(mp4|mov|webm|3gp|mkv|m4v)$/i.test(originalExt)) {
+      resourceType = "video";
+      if (!mime.startsWith("video/")) mime = "video/mp4";
+    } else if (mime.startsWith("audio/") || /\.(mp3|ogg|wav|m4a|aac|amr)$/i.test(originalExt)) {
+      resourceType = "audio";
+      if (!mime.startsWith("audio/")) mime = "audio/mpeg";
+    } else {
+      resourceType = "document";
+    }
 
     // Enforce WhatsApp Cloud API media constraints
     if (resourceType === "video") {
