@@ -1,9 +1,10 @@
 const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const db = require("../db");
-const { uploadFileToServer, deleteFileFromServer, formatMediaUrl } = require("../services/localStorageService");
+const { uploadFileToServer, deleteFileFromServer, getLocalFilePath, formatMediaUrl } = require("../services/localStorageService");
 const { uploadMediaToMeta } = require("../services/metaApi");
 const os = require("os");
 
@@ -90,32 +91,41 @@ router.post("/", handleUpload, async (req, res) => {
       }
     }
 
-    // 1. Upload to Meta Cloud API (stream directly from temp file)
-    let metaMediaId = null;
-    try {
-      metaMediaId = await uploadMediaToMeta(req.file.path, req.file.mimetype);
-    } catch (metaErr) {
-      console.warn("⚠️ Meta upload skipped/failed, saved to server storage:", metaErr.message);
-    }
-
-    // 2. Store file directly on local server filesystem (uploads/library)
+    // 1. Store file directly on local server filesystem (uploads/library)
     const mediaUrl = await uploadFileToServer(req.file.path, "library", resourceType);
 
-    // 3. Clean up temp multer file
+    // 2. Clean up temp multer file
     fs.promises.unlink(req.file.path).catch(() => {});
 
-    // 4. Save to database
+    // 3. Save to database immediately
     const result = await db.query(
       `INSERT INTO media_assets (original_name, media_url, meta_media_id, resource_type)
        VALUES ($1, $2, $3, $4) RETURNING *`,
-      [req.file.originalname, mediaUrl, metaMediaId, resourceType]
+      [req.file.originalname, mediaUrl, null, resourceType]
     );
 
     const saved = result.rows[0];
+    const formattedUrl = formatMediaUrl(saved.media_url);
+
+    // 4. Return fast response immediately to client (prevents Cloudflare/browser 30s timeout)
     res.status(201).json({
       ...saved,
-      media_url: formatMediaUrl(saved.media_url),
+      media_url: formattedUrl,
     });
+
+    // 5. Asynchronously pre-upload to Meta in background without blocking the HTTP response
+    const localSavedPath = getLocalFilePath(saved.media_url);
+    if (localSavedPath && fs.existsSync(localSavedPath)) {
+      uploadMediaToMeta(localSavedPath, mime)
+        .then((metaMediaId) => {
+          if (metaMediaId) {
+            db.query(`UPDATE media_assets SET meta_media_id = $1 WHERE id = $2`, [metaMediaId, saved.id]).catch(() => {});
+          }
+        })
+        .catch((metaErr) => {
+          console.warn("⚠️ Background Meta pre-upload skipped:", metaErr.message);
+        });
+    }
   } catch (err) {
     if (req.file?.path) {
       fs.promises.unlink(req.file.path).catch(() => {});

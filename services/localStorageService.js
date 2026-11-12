@@ -102,13 +102,26 @@ async function uploadBufferToServer(buffer, folder = "inbound", resourceType = "
  * Deletes a file from the server's uploads directory given its public URL.
  * @param {string} mediaUrl
  */
+/**
+ * Resolves the on-disk file path for a file inside uploads directory given its URL.
+ * @param {string} mediaUrl
+ * @returns {string|null}
+ */
+function getLocalFilePath(mediaUrl) {
+  if (!mediaUrl || typeof mediaUrl !== "string" || !mediaUrl.includes("/uploads/")) return null;
+  const parts = mediaUrl.split("/uploads/")[1];
+  if (!parts) return null;
+  return path.join(UPLOADS_ROOT, parts);
+}
+
+/**
+ * Deletes a file from the server's uploads directory given its public URL.
+ * @param {string} mediaUrl
+ */
 async function deleteFileFromServer(mediaUrl) {
   try {
-    if (!mediaUrl || !mediaUrl.includes("/uploads/")) return;
-    const parts = mediaUrl.split("/uploads/")[1];
-    if (!parts) return;
-    const filePath = path.join(UPLOADS_ROOT, parts);
-    if (fs.existsSync(filePath)) {
+    const filePath = getLocalFilePath(mediaUrl);
+    if (filePath && fs.existsSync(filePath)) {
       await fs.promises.unlink(filePath);
     }
   } catch (err) {
@@ -120,6 +133,7 @@ module.exports = {
   uploadFileToServer,
   uploadBufferToServer,
   deleteFileFromServer,
+  getLocalFilePath,
   UPLOADS_ROOT,
   getBaseUrl,
   formatMediaUrl,

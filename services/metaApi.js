@@ -214,7 +214,7 @@ const uploadMediaToMeta = async (filePath, mimeType) => {
         Authorization: `Bearer ${token}`,
         ...formData.getHeaders(),
       },
-      timeout: 120000, // 120s timeout for large media files (up to 25MB)
+      timeout: 30000, // 30s timeout for media uploads
     });
 
     return response.data.id;
